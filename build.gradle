@@ -1,0 +1,154 @@
+description = "Co-operative multitasking utility"
+
+buildscript {
+	repositories {
+		mavenCentral()
+	}
+}
+
+allprojects {
+	apply plugin: "java"
+	apply plugin: "maven"
+	apply plugin: "signing"
+	group = "com.github.akurilov"
+	version = "1.0.0"
+}
+
+ext.moduleName = "${group}.fiber4j"
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	compile("com.github.akurilov:java-commons:[2.0.4,)")
+	testCompile("junit:junit:4.12")
+}
+
+compileJava {
+	sourceCompatibility = JavaVersion.VERSION_1_8
+	targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+compileTestJava {
+	sourceCompatibility = JavaVersion.VERSION_1_8
+	targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+jar {
+	manifest {
+		attributes (
+			"Implementation-Version": version,
+			"Implementation-Title": rootProject.name,
+		)
+	}
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+	classifier = "sources"
+	from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+	classifier = "javadoc"
+	from javadoc.destinationDir
+}
+
+artifacts {
+	archives jar
+	archives sourcesJar
+	archives javadocJar
+}
+
+test {
+	jvmArgs "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
+	jvmArgs "-XX:MaxDirectMemorySize=1g"
+	jvmArgs "-XX:+HeapDumpOnOutOfMemoryError"
+	maxHeapSize "1g"
+	systemProperty "com.sun.management.jmxremote", "true"
+	systemProperty "com.sun.management.jmxremote.port", "9010"
+	systemProperty "com.sun.management.jmxremote.rmi.port", "9010"
+	systemProperty "com.sun.management.jmxremote.local.only", "false"
+	systemProperty "com.sun.management.jmxremote.authenticate", "false"
+	systemProperty "com.sun.management.jmxremote.ssl", "false"
+	testLogging {
+		events "passed", "skipped", "failed", "standardOut"
+		showExceptions = true
+		showStandardStreams = true
+	}
+}
+
+signing {
+	required {
+		gradle.taskGraph.hasTask("uploadArchives")
+	}
+	sign configurations.archives
+}
+
+// see http://central.sonatype.org/pages/gradle.html for details
+uploadArchives {
+
+	def ossrhUsername = project.hasProperty("ossrhUsername") ?
+		project.property("ossrhUsername") : null
+	def ossrhPassword = project.hasProperty("ossrhPassword") ?
+		project.property("ossrhPassword") : null
+
+	repositories {
+		mavenDeployer {
+			beforeDeployment {
+				MavenDeployment deployment -> signing.signPom(deployment)
+			}
+
+			repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+				authentication(userName: ossrhUsername, password: ossrhPassword)
+			}
+
+			snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+				authentication(userName: ossrhUsername, password: ossrhPassword)
+			}
+
+			pom {
+
+				name = rootProject.name
+				groupId = rootProject.group
+
+				project {
+					description = rootProject.description
+
+					url "https://github.com/akurilov/fiber4j"
+
+					scm {
+						connection "https://github.com/akurilov/fiber4j.git"
+						developerConnection "https://github.com/akurilov/fiber4j.git"
+						url "https://github.com/akurilov/fiber4j.git"
+					}
+
+					licenses {
+						license {
+							name "Apache License 2.0"
+							url "https://github.com/akurilov/fiber4j/blob/master/LICENSE"
+						}
+					}
+
+					developers {
+						developer {
+							id "akurilov"
+							name "Andrey Kurilov"
+							email "akurilov123@gmail.com"
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+task wrapper(type: Wrapper) {
+	gradleVersion = "4.7"
+}
+
+task printVersion {
+	group = "versioning"
+	description = "Prints version."
+	doLast { logger.quiet "fiber4j version: $version" }
+}
