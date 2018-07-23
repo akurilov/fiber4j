@@ -108,6 +108,7 @@ implements OutputFiber<T> {
 			}
 			if(nextFrom < to) {
 				buff = selectBuff();
+				buffLock = buffLocks.get(buff);
 				if(buff != null && buffLock.tryLock()) {
 					try {
 						final int m = Math.min(to - nextFrom, buffCapacity - buff.size());
@@ -168,7 +169,7 @@ implements OutputFiber<T> {
 						}
 					} else {
 						n = output.put(buff);
-						buff.removeRange(0, n);
+						buff.removeFirst(n);
 					}
 				}
 			} catch(final EOFException | NoSuchObjectException | ConnectException ignored) {
@@ -200,5 +201,6 @@ implements OutputFiber<T> {
 			}
 		}
 		buffs.clear();
+		buffLocks.clear();
 	}
 }
