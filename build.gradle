@@ -11,17 +11,20 @@ allprojects {
 	apply plugin: "maven"
 	apply plugin: "signing"
 	group = "com.github.akurilov"
-	version = "1.0.0"
+	version = "1.0.1"
 }
 
 ext.moduleName = "${group}.fiber4j"
 
 repositories {
 	mavenCentral()
+	maven {
+		url "https://oss.sonatype.org/content/repositories/comgithubakurilov-1110"
+	}
 }
 
 dependencies {
-	compile("com.github.akurilov:java-commons:[2.0.4,)")
+	compile("com.github.akurilov:java-commons:[2.1.5,)")
 	testCompile("junit:junit:4.12")
 }
 
