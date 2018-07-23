@@ -1,7 +1,7 @@
 package com.github.akurilov.fiber4j;
 
-import com.github.akurilov.commons.collection.OptLockArrayBuffer;
-import com.github.akurilov.commons.collection.OptLockBuffer;
+import com.github.akurilov.commons.collection.CircularArrayBuffer;
+import com.github.akurilov.commons.collection.CircularBuffer;
 import com.github.akurilov.commons.io.Input;
 import com.github.akurilov.commons.io.Output;
 
@@ -14,6 +14,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,7 +33,8 @@ implements OutputFiber<T> {
 	private final AtomicLong putCounter = new AtomicLong(0);
 	private final AtomicLong getCounter = new AtomicLong(0);
 	private final int buffCapacity;
-	private final Map<O, OptLockBuffer<T>> buffs;
+	private final Map<O, CircularBuffer<T>> buffs;
+	private final Map<CircularBuffer<T>, Lock> buffLocks;
 
 	public RoundRobinOutputFiber(
 		final FibersExecutor executor, final List<O> outputs, final int buffCapacity
@@ -41,12 +44,15 @@ implements OutputFiber<T> {
 		this.outputsCount = outputs.size();
 		this.buffCapacity = buffCapacity;
 		this.buffs = new HashMap<>(this.outputsCount);
+		this.buffLocks = new HashMap<>(this.outputsCount);
 		for(int i = 0; i < this.outputsCount; i ++) {
-			this.buffs.put(outputs.get(i), new OptLockArrayBuffer<>(buffCapacity));
+			final CircularBuffer<T> buff = new CircularArrayBuffer<>(buffCapacity);
+			this.buffs.put(outputs.get(i), buff);
+			this.buffLocks.put(buff, new ReentrantLock());
 		}
 	}
 
-	private OptLockBuffer<T> selectBuff() {
+	private CircularBuffer<T> selectBuff() {
 		if(outputsCount > 1) {
 			return buffs.get(outputs.get((int) (putCounter.getAndIncrement() % outputsCount)));
 		} else {
@@ -60,12 +66,13 @@ implements OutputFiber<T> {
 		if(isStopped()) {
 			throw new EOFException();
 		}
-		final OptLockBuffer<T> buff = selectBuff();
-		if(buff != null && buff.tryLock()) {
+		final CircularBuffer<T> buff = selectBuff();
+		final Lock buffLock = buffLocks.get(buff);
+		if(buff != null && buffLock.tryLock()) {
 			try {
 				return buff.size() < buffCapacity && buff.add(ioTask);
 			} finally {
-				buff.unlock();
+				buffLock.unlock();
 			}
 		} else {
 			return false;
@@ -78,14 +85,16 @@ implements OutputFiber<T> {
 		if(isStopped()) {
 			throw new EOFException();
 		}
-		OptLockBuffer<T> buff;
+		CircularBuffer<T> buff;
+		Lock buffLock;
 		final int n = to - from;
 		if(n > outputsCount) {
 			final int nPerOutput = n / outputsCount;
 			int nextFrom = from;
 			for(int i = 0; i < outputsCount; i ++) {
 				buff = selectBuff();
-				if(buff != null && buff.tryLock()) {
+				buffLock = buffLocks.get(buff);
+				if(buff != null && buffLock.tryLock()) {
 					try {
 						final int m = Math.min(nPerOutput, buffCapacity - buff.size());
 						for(final T item : srcBuff.subList(nextFrom, nextFrom + m)) {
@@ -93,13 +102,13 @@ implements OutputFiber<T> {
 						}
 						nextFrom += m;
 					} finally {
-						buff.unlock();
+						buffLock.unlock();
 					}
 				}
 			}
 			if(nextFrom < to) {
 				buff = selectBuff();
-				if(buff != null && buff.tryLock()) {
+				if(buff != null && buffLock.tryLock()) {
 					try {
 						final int m = Math.min(to - nextFrom, buffCapacity - buff.size());
 						for(final T item : srcBuff.subList(nextFrom, nextFrom + m)) {
@@ -107,7 +116,7 @@ implements OutputFiber<T> {
 						}
 						nextFrom += m;
 					} finally {
-						buff.unlock();
+						buffLock.unlock();
 					}
 				}
 			}
@@ -115,7 +124,8 @@ implements OutputFiber<T> {
 		} else {
 			for(int i = from; i < to; i ++) {
 				buff = selectBuff();
-				if(buff != null && buff.tryLock()) {
+				buffLock = buffLocks.get(buff);
+				if(buff != null && buffLock.tryLock()) {
 					try {
 						if(buff.size() < buffCapacity) {
 							buff.add(srcBuff.get(i));
@@ -123,7 +133,7 @@ implements OutputFiber<T> {
 							return i - from;
 						}
 					} finally {
-						buff.unlock();
+						buffLock.unlock();
 					}
 				} else {
 					return i - from;
@@ -146,8 +156,9 @@ implements OutputFiber<T> {
 			outputsCount > 1 ? (int) (getCounter.getAndIncrement() % outputsCount) : 0
 		);
 		// select the corresponding buffer
-		final OptLockBuffer<T> buff = buffs.get(output);
-		if(buff != null && buff.tryLock()) {
+		final CircularBuffer<T> buff = buffs.get(output);
+		final Lock buffLock = buffLocks.get(buff);
+		if(buff != null && buffLock.tryLock()) {
 			try {
 				int n = buff.size();
 				if(n > 0) {
@@ -169,7 +180,7 @@ implements OutputFiber<T> {
 			} catch(final Throwable t) {
 				LOG.log(Level.WARNING, "Invocation failure", t);
 			} finally {
-				buff.unlock();
+				buffLock.unlock();
 			}
 		}
 	}
@@ -183,7 +194,7 @@ implements OutputFiber<T> {
 	protected final void doClose()
 	throws IOException {
 		for(final O output : outputs) {
-			final OptLockBuffer<T> buff = buffs.get(output);
+			final CircularBuffer<T> buff = buffs.get(output);
 			if(buff != null) {
 				buff.clear();
 			}
