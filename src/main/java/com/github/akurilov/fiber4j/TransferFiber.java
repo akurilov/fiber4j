@@ -26,14 +26,14 @@ implements Fiber {
 	private final Input<T> input;
 	private final Output<T> output;
 	private final CircularBuffer<T> itemsBuff;
-	private final int batchSize;
+	private final int capacity;
 
 	private int n;
 
 	public TransferFiber(
-		final FibersExecutor executor, final Input<T> input, final Output<T> output, final int batchSize
+		final FibersExecutor executor, final Input<T> input, final Output<T> output, final int capacity
 	) {
-		this(executor, new CircularArrayBuffer<>(batchSize), input, output);
+		this(executor, new CircularArrayBuffer<>(capacity), input, output);
 	}
 
 	private TransferFiber(
@@ -43,14 +43,14 @@ implements Fiber {
 		this.input = input;
 		this.output = output;
 		this.itemsBuff = itemsBuff;
-		this.batchSize = itemsBuff.capacity();
+		this.capacity = itemsBuff.capacity();
 	}
 
 	@Override
 	protected final void invokeTimedExclusively(final long startTimeNanos) {
 		try {
 
-			input.get(itemsBuff, batchSize - itemsBuff.size());
+			input.get(itemsBuff, capacity - itemsBuff.size());
 
 			n = itemsBuff.size();
 
@@ -61,7 +61,7 @@ implements Fiber {
 						itemsBuff.clear();
 					}
 				} else {
-					n = output.put(itemsBuff, 0, Math.min(n, batchSize));
+					n = output.put(itemsBuff, 0, Math.min(n, capacity));
 					itemsBuff.removeFirst(n);
 				}
 			}

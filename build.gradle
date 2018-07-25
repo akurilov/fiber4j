@@ -18,13 +18,10 @@ ext.moduleName = "${group}.fiber4j"
 
 repositories {
 	mavenCentral()
-	maven {
-		url "https://oss.sonatype.org/content/repositories/comgithubakurilov-1111"
-	}
 }
 
 dependencies {
-	compile("com.github.akurilov:java-commons:[2.1.5,)")
+	compile("com.github.akurilov:java-commons:2.1.5")
 	testCompile("junit:junit:4.12")
 }
 
