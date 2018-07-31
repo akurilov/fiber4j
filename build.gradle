@@ -11,7 +11,7 @@ allprojects {
 	apply plugin: "maven"
 	apply plugin: "signing"
 	group = "com.github.akurilov"
-	version = "1.0.1"
+	version = "1.0.2"
 }
 
 ext.moduleName = "${group}.fiber4j"

@@ -38,6 +38,8 @@ implements Runnable {
 						if(nextFiber.isStarted()) {
 							nextFiber.invoke();
 						}
+					} catch(final RuntimeException e) {
+						throw e; // don't catch the unchecked exceptions
 					} catch(final Throwable t) {
 						LOG.log(Level.WARNING, "Fiber \"" + nextFiber + "\" failed", t);
 					}
