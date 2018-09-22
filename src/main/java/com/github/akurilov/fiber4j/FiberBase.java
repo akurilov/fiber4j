@@ -2,12 +2,18 @@ package com.github.akurilov.fiber4j;
 
 import com.github.akurilov.commons.concurrent.AsyncRunnableBase;
 
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * The base class for all fibers.
  */
 public abstract class FiberBase
 extends AsyncRunnableBase
 implements Fiber {
+
+	private static final Logger LOG = Logger.getLogger(FiberBase.class.getSimpleName());
 
 	private final FibersExecutor executor;
 
@@ -25,12 +31,20 @@ implements Fiber {
 	 */
 	@Override
 	public final void invoke() {
-		invokeTimed(System.nanoTime());
+		long t = System.nanoTime();
+		invokeTimed(t);
+		t = System.nanoTime() - t;
+		if(t > WARN_DURATION_LIMIT) {
+			LOG.log(
+				Level.WARNING, "Fiber \"" + this + "\" invocation duration (" + TimeUnit.NANOSECONDS.toMillis(t)
+					+ "[ms]) exceeds the limit (" + TimeUnit.NANOSECONDS.toMillis(SOFT_DURATION_LIMIT) + "[ms])"
+			);
+		}
 	}
 
 	/**
 	 * The method implementation should use the start time to check its own duration in order to not
-	 * to exceed the invocation time limit (100 ms)
+	 * to exceed the invocation time limit
 	 * @param startTimeNanos the time when the invocation started
 	 */
 	protected abstract void invokeTimed(final long startTimeNanos);

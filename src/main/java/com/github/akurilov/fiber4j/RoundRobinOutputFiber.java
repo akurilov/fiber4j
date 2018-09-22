@@ -37,9 +37,7 @@ implements OutputFiber<T> {
 	private final Map<O, CircularBuffer<T>> buffs;
 	private final Map<O, Lock> buffLocks;
 
-	public RoundRobinOutputFiber(
-		final FibersExecutor executor, final List<O> outputs, final int buffCapacity
-	) {
+	public RoundRobinOutputFiber(final FibersExecutor executor, final List<O> outputs, final int buffCapacity) {
 		super(executor);
 		this.outputs = outputs;
 		this.outputsCount = outputs.size();
