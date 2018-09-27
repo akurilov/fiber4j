@@ -29,40 +29,40 @@ public class RoundRobinOutputFiberTest {
 	private static final FibersExecutor EXECUTOR = new FibersExecutor();
 
 	private final static class CountingOutput<T>
-		implements Output<T> {
+	implements Output<T> {
 
 		public final LongAdder count = new LongAdder();
 
 		@Override
 		public boolean put(final T item)
-			throws IOException {
+		throws IOException {
 			count.increment();
 			return true;
 		}
 
 		@Override
 		public int put(final List<T> buffer, final int from, final int to)
-			throws IOException {
+		throws IOException {
 			count.add(to - from);
 			return to - from;
 		}
 
 		@Override
 		public int put(final List<T> buffer)
-			throws IOException {
+		throws IOException {
 			count.add(buffer.size());
 			return buffer.size();
 		}
 
 		@Override
 		public Input<T> getInput()
-			throws IOException {
+		throws IOException {
 			return null;
 		}
 
 		@Override
 		public void close()
-			throws IOException {
+		throws IOException {
 		}
 	}
 
@@ -71,7 +71,7 @@ public class RoundRobinOutputFiberTest {
 	private final int outputCount;
 
 	public RoundRobinOutputFiberTest(final int outputCount)
-		throws Exception {
+	throws Exception {
 		this.outputCount = outputCount;
 		outputs = new ArrayList<>(outputCount);
 		for(int i = 0; i < outputCount; i ++) {
@@ -115,7 +115,7 @@ public class RoundRobinOutputFiberTest {
 
 	@Test
 	public void test()
-		throws Exception {
+	throws Exception {
 		long count = 0;
 		for(final CountingOutput co : outputs) {
 			count += co.count.sum();

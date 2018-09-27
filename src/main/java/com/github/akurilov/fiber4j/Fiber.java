@@ -10,9 +10,14 @@ extends AsyncRunnable {
 
 	/**
 	 The soft limit for the fiber invocation duration.
-	 A fiber implementation should care about its own invocation duration.
+	 A fiber implementation should use this hint for its own invocation duration.
 	 */
-	int TIMEOUT_NANOS = 100_000_000;
+	int SOFT_DURATION_LIMIT = 10_000_000;
+
+	/**
+	 Any invocation duration exceeding this limit will be logged as warning
+	 */
+	int WARN_DURATION_LIMIT = 1_000_000_000;
 
 	/**
 	 * Perform the work

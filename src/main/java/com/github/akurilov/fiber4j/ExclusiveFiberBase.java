@@ -21,7 +21,7 @@ extends FiberBase {
 	}
 
 	@Override
-	protected final void invokeTimed(long startTimeNanos) {
+	protected final void invokeTimed(final long startTimeNanos) {
 		if(invocationLock.tryLock()) {
 			try {
 				invokeTimedExclusively(startTimeNanos);
