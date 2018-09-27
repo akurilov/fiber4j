@@ -34,10 +34,11 @@ implements Fiber {
 		long t = System.nanoTime();
 		invokeTimed(t);
 		t = System.nanoTime() - t;
-		if(t > WARN_DURATION_LIMIT) {
+		if(t > DEBUG_DURATION_LIMIT_NANOS) {
 			LOG.log(
-				Level.WARNING, "Fiber \"" + this + "\" invocation duration (" + TimeUnit.NANOSECONDS.toMillis(t)
-					+ "[ms]) exceeds the limit (" + TimeUnit.NANOSECONDS.toMillis(SOFT_DURATION_LIMIT) + "[ms])"
+				t > WARN_DURATION_LIMIT_NANOS ? Level.WARNING : Level.FINE,
+				"Fiber \"" + this + "\" invocation duration (" + TimeUnit.NANOSECONDS.toMillis(t) + "[ms]) exceeds "
+					+ "the limit (" + TimeUnit.NANOSECONDS.toMillis(SOFT_DURATION_LIMIT_NANOS) + "[ms])"
 			);
 		}
 	}

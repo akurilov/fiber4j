@@ -9,15 +9,20 @@ public interface Fiber
 extends AsyncRunnable {
 
 	/**
-	 The soft limit for the fiber invocation duration.
-	 A fiber implementation should use this hint for its own invocation duration.
+	 * The soft limit for the fiber invocation duration.
+	 * A fiber implementation should use this hint for its own invocation duration.
 	 */
-	int SOFT_DURATION_LIMIT = 10_000_000;
+	long SOFT_DURATION_LIMIT_NANOS = 10_000_000L;
 
 	/**
-	 Any invocation duration exceeding this limit will be logged as warning
+	 * Any invocation duration exceeding this limit will be logged with fine level
 	 */
-	int WARN_DURATION_LIMIT = 1_000_000_000;
+	long DEBUG_DURATION_LIMIT_NANOS = 1_000_000_000L;
+
+	/**
+	 * Any invocation duration exceeding this limit will be logged as warning
+	 */
+	long WARN_DURATION_LIMIT_NANOS = 10_000_000_000L;
 
 	/**
 	 * Perform the work
