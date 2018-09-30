@@ -24,7 +24,7 @@ executed concurrently also.
 ## Gradle
 
 ```groovy
-compile group: 'com.github.akurilov', name: 'fiber4j', version: '1.0.4'
+compile group: 'com.github.akurilov', name: 'fiber4j', version: '1.0.5'
 ```
 
 ## Implementing Basic Fiber
