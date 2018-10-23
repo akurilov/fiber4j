@@ -36,7 +36,7 @@ implements Fiber {
 		this(executor, new CircularArrayBuffer<>(capacity), input, output);
 	}
 
-	private TransferFiber(
+	public TransferFiber(
 		final FibersExecutor executor, final CircularBuffer<T> itemsBuff, final Input<T> input, final Output<T> output
 	) {
 		super(executor);
