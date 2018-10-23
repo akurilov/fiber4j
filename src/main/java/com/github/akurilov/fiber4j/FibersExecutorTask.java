@@ -35,7 +35,7 @@ implements Runnable {
 			} else {
 				for(final Fiber nextFiber : fibers) {
 					try {
-						if(nextFiber.isStarted()) {
+						if(nextFiber.isStarted() || nextFiber.isShutdown()) {
 							nextFiber.invoke();
 						}
 					} catch(final RuntimeException e) {

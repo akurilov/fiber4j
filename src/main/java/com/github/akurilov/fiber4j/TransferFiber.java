@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.rmi.ConnectException;
 import java.rmi.NoSuchObjectException;
 import java.rmi.RemoteException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,7 +52,9 @@ implements Fiber {
 	protected final void invokeTimedExclusively(final long startTimeNanos) {
 		try {
 
-			input.get(itemsBuff, capacity - itemsBuff.size());
+			if(isStarted()) {
+				input.get(itemsBuff, capacity - itemsBuff.size());
+			}
 
 			n = itemsBuff.size();
 
@@ -90,7 +94,25 @@ implements Fiber {
 	}
 
 	@Override
-	protected final void doClose()
+	public boolean await(final long timeout, final TimeUnit timeUnit)
+	throws IllegalStateException, InterruptedException {
+		if(isShutdown()) {
+			final long invokeTimeMillis = System.currentTimeMillis();
+			final long timeOutMillis = timeUnit.toMillis(timeout);
+			while(timeOutMillis > System.currentTimeMillis() - invokeTimeMillis) {
+				if(itemsBuff.isEmpty()) {
+					return true;
+				}
+				LockSupport.parkNanos(1);
+			}
+			return false;
+		} else {
+			return super.await(timeout, timeUnit);
+		}
+	}
+
+	@Override
+	protected void doClose()
 	throws IOException {
 		itemsBuff.clear();
 	}

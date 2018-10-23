@@ -118,11 +118,10 @@ public class TransferFiberTest {
 		final Fiber transferFiber = new TransferFiber<>(fibersExecutor, exchangeBuff, input, output);
 		transferFiber.start();
 		TimeUnit.SECONDS.sleep(10);
-		transferFiber.stop();
+		transferFiber.shutdown();
 		assertNotEquals(0, inputCounter.sum() - outputCounter.sum());
-		while(!exchangeBuff.isEmpty()) {
-			transferFiber.invoke();
-		}
+		transferFiber.await();
 		assertEquals(0, inputCounter.sum() - outputCounter.sum());
+		transferFiber.close();
 	}
 }
