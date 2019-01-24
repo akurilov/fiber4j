@@ -3,16 +3,25 @@ description = "Co-operative multitasking utility"
 buildscript {
 	repositories {
 		mavenCentral()
+		maven {
+			url "https://plugins.gradle.org/m2/"
+		}
+	}
+	dependencies {
+		classpath "org.javamodularity:moduleplugin:1.4.0"
 	}
 }
 
-allprojects {
-	apply plugin: "java"
-	apply plugin: "maven"
-	apply plugin: "signing"
-	group = "com.github.akurilov"
-	version = "1.0.7"
-}
+apply plugin: "java"
+apply plugin: "maven"
+apply plugin: "signing"
+apply plugin: "org.javamodularity.moduleplugin"
+
+group = "com.github.akurilov"
+version = "1.1.0"
+
+sourceCompatibility = 11
+targetCompatibility = 11
 
 ext.moduleName = "${group}.fiber4j"
 
@@ -21,23 +30,14 @@ repositories {
 }
 
 dependencies {
-	compile("com.github.akurilov:java-commons:2.1.10")
+	compile("com.github.akurilov:java-commons:2.2.0")
 	testCompile("junit:junit:4.12")
-}
-
-compileJava {
-	sourceCompatibility = JavaVersion.VERSION_1_8
-	targetCompatibility = JavaVersion.VERSION_1_8
-}
-
-compileTestJava {
-	sourceCompatibility = JavaVersion.VERSION_1_8
-	targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 jar {
 	manifest {
 		attributes (
+			"Automatic-Module-Name": moduleName,
 			"Implementation-Version": version,
 			"Implementation-Title": rootProject.name,
 		)
@@ -61,6 +61,7 @@ artifacts {
 }
 
 test {
+	useJUnitPlatform()
 	jvmArgs "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
 	jvmArgs "-XX:MaxDirectMemorySize=1g"
 	jvmArgs "-XX:+HeapDumpOnOutOfMemoryError"
@@ -143,8 +144,8 @@ uploadArchives {
 	}
 }
 
-task wrapper(type: Wrapper) {
-	gradleVersion = "4.7"
+wrapper {
+	gradleVersion = "5.0"
 }
 
 task printVersion {
